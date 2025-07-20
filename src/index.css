@@ -1,0 +1,23 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  @keyframes fade-in {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes new-message-highlight {
+    0% { background-color: rgba(59, 130, 246, 0.3); }
+    100% { background-color: transparent; }
+  }
+
+  .animate-fade-in {
+    animation: fade-in 0.5s ease-out forwards;
+  }
+
+  .animate-new-message {
+    animation: new-message-highlight 1s ease-out forwards;
+  }
+}
