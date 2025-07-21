@@ -1,10 +1,10 @@
 import toast from 'react-hot-toast';
-import { Subject } from 'rxjs';
+import { BehaviorSubject } from 'rxjs';
 import { Device } from '../types';
 import { UAParser } from 'ua-parser-js';
 import { config } from '../config';
 
-const clientListSubject = new Subject<Device[]>();
+const clientListSubject = new BehaviorSubject<Device[]>([]);
 
 class SocketService {
   private socket: WebSocket | null = null;
@@ -52,6 +52,7 @@ class SocketService {
       console.log('WebSocket 连接成功');
       toast.success('连接成功');
       this.isReload = false; // 连接成功后，重置刷新标志
+      this.socket?.send(JSON.stringify({ type: 'get_client_list' }));
     };
 
     this.socket.onmessage = (event) => {
@@ -60,7 +61,13 @@ class SocketService {
         console.log('收到消息:', message);
 
         if (message.type === 'client_list') {
-          clientListSubject.next(message.payload.clients || []);
+          const clients = message.payload.clients || [];
+          const formattedClients = clients.map((client: any) => ({
+            id: client.id,
+            ip: client.ip,
+            username: client.id, // The ID is the full display name
+          }));
+          clientListSubject.next(formattedClients);
         }
       } catch (error) {
         console.error('解析消息失败:', error);

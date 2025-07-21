@@ -1,8 +1,11 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { socketService } from '../../api/socket';
+import DuangAnimation from '../../components/ui/DuangAnimation';
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const [showDuang, setShowDuang] = useState(false);
 
   const handleLogin = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -10,10 +13,16 @@ export default function LoginPage() {
     sessionStorage.setItem('username', username);
     console.log(`用户 '${username}' 登录，信息已缓存`);
     socketService.connect();
+    setShowDuang(true);
+  };
+
+  const handleAnimationEnd = () => {
+    setShowDuang(false);
     navigate('/app');
   };
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-900 text-gray-200">
+      {showDuang && <DuangAnimation onAnimationEnd={handleAnimationEnd} />}
       <div className="w-full max-w-md p-8 space-y-6 bg-gray-800 rounded-xl shadow-lg">
         <h1 className="text-3xl font-bold text-center">Duang File</h1>
         <form className="space-y-6" onSubmit={handleLogin}>

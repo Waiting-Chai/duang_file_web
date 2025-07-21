@@ -6,12 +6,14 @@ import { useDevices } from '../../contexts/DeviceContext';
 import { Transfer } from '../../types';
 import TransferList from './components/TransferList';
 import { useTransfers } from '../../hooks/useTransfers';
+import RocketAnimation from '../../components/ui/RocketAnimation';
 
 export default function FileTransferPage() {
   const { transfers, addTransfers, handlePause, handleResume, handleCancel } = useTransfers();
   const { selectedDevices, devices } = useDevices();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [filesToConfirm, setFilesToConfirm] = useState<File[]>([]);
+  const [showRocket, setShowRocket] = useState(false);
 
   const handleFilesSelected = (acceptedFiles: File[]) => {
     if (acceptedFiles.length > 0) {
@@ -58,6 +60,7 @@ export default function FileTransferPage() {
     }
     setIsModalOpen(false);
     setFilesToConfirm([]);
+    setShowRocket(true);
   };
 
   const handleCancelSend = () => {
@@ -66,6 +69,10 @@ export default function FileTransferPage() {
   };
 
 
+
+  const handleRocketAnimationEnd = () => {
+    setShowRocket(false);
+  };
 
   return (
     <div className="h-full flex flex-col gap-6">
@@ -94,6 +101,8 @@ export default function FileTransferPage() {
         onConfirm={handleConfirmSend}
         onCancel={handleCancelSend}
       />
+
+      {showRocket && <RocketAnimation onAnimationEnd={handleRocketAnimationEnd} />}
     </div>
   );
 }
