@@ -12,7 +12,7 @@ export type TransferDirection = 'sent' | 'received';
 export interface Transfer {
   id: string | number;
   name: string;
-  size: string;
+  size: string | number;
   status: TransferStatus;
   progress: number;
   direction: TransferDirection;

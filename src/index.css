@@ -58,6 +58,128 @@
 }
 
 @layer utilities {
+  /* 水管和球体动画 */
+  .pipe-animation-container {
+    width: 100%;
+    max-width: 500px;
+    margin: 0 auto;
+  }
+
+  .water-pipe {
+    opacity: 0.9;
+    filter: drop-shadow(0 0 8px rgba(97, 218, 251, 0.5));
+    animation: pipe-pulse 2s ease-in-out infinite alternate;
+  }
+  
+  @keyframes pipe-pulse {
+    0% {
+      filter: drop-shadow(0 0 8px rgba(97, 218, 251, 0.5));
+      stroke-width: 40;
+    }
+    100% {
+      filter: drop-shadow(0 0 12px rgba(167, 139, 250, 0.7));
+      stroke-width: 42;
+    }
+  }
+
+  .rolling-ball {
+    animation: roll-through-pipe 2.5s ease-in-out forwards;
+    filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.8));
+  }
+  
+  .rolling-ball circle {
+    animation: ball-pulse 0.5s ease-in-out infinite alternate;
+  }
+  
+  .rolling-ball-inner {
+    animation: roll-through-pipe-inner 2.5s ease-in-out forwards, inner-glow 0.5s ease-in-out infinite alternate;
+  }
+  
+  @keyframes roll-through-pipe-inner {
+    0% {
+      transform: translate(100px, 50px) scale(0.8);
+      opacity: 0;
+    }
+    10% {
+      opacity: 1;
+      transform: translate(100px, 50px) scale(1);
+    }
+    25% {
+      transform: translate(170px, 120px);
+    }
+    30% {
+      transform: translate(200px, 150px);
+    }
+    45% {
+      transform: translate(250px, 200px);
+    }
+    60% {
+      transform: translate(300px, 250px);
+    }
+    80% {
+      transform: translate(300px, 300px) scale(1.2);
+      opacity: 1;
+    }
+    100% {
+      transform: translate(300px, 350px) scale(1.5);
+      opacity: 0;
+    }
+  }
+  
+  @keyframes inner-glow {
+    0% {
+      opacity: 0.5;
+      r: 7;
+    }
+    100% {
+      opacity: 0.9;
+      r: 9;
+    }
+  }
+
+  @keyframes ball-pulse {
+    0% {
+      opacity: 0.8;
+      r: 15;
+    }
+    100% {
+      opacity: 1;
+      r: 17;
+    }
+  }
+
+  @keyframes roll-through-pipe {
+    0% {
+      transform: translate(100px, 50px) scale(0.8) rotate(0deg);
+      opacity: 0;
+    }
+    10% {
+      opacity: 1;
+      transform: translate(100px, 50px) scale(1) rotate(45deg);
+    }
+    25% {
+      transform: translate(170px, 120px) rotate(180deg);
+    }
+    30% {
+      transform: translate(200px, 150px) rotate(225deg);
+    }
+    45% {
+      transform: translate(250px, 200px) rotate(360deg);
+    }
+    60% {
+      transform: translate(300px, 250px) rotate(540deg);
+    }
+    80% {
+      transform: translate(300px, 300px) scale(1.2) rotate(720deg);
+      opacity: 1;
+    }
+    100% {
+      transform: translate(300px, 350px) scale(1.5) rotate(900deg);
+      opacity: 0;
+    }
+  }
+
+  /* Duang文字动画 */
   .duang-text {
     font-family: 'Impact', Haettenschweiler, 'Arial Narrow Bold', sans-serif;
     font-size: 15rem; /* Adjusted size */
@@ -74,24 +196,56 @@
       transform: scale(0.3) rotate(-20deg);
       filter: blur(8px);
     }
+    15% {
+      opacity: 0.8;
+      transform: scale(0.9) rotate(10deg);
+      filter: blur(2px);
+    }
     25% {
       opacity: 1;
-      transform: scale(1.1) rotate(5deg);
+      transform: scale(1.2) rotate(5deg);
       filter: blur(0);
       text-shadow: 0 0 15px #fff, 0 0 30px #0ff, 0 0 45px #0ff;
     }
+    30% {
+      transform: scale(1.15) rotate(0deg) translateX(-10px) translateY(5px);
+    }
+    35% {
+      transform: scale(1.1) rotate(-3deg) translateX(10px) translateY(-5px);
+    }
     40% {
-      transform: scale(1) rotate(-5deg) translateX(5px) translateY(-5px);
+      transform: scale(1.05) rotate(-5deg) translateX(15px) translateY(-10px);
+    }
+    45% {
+      transform: scale(1) rotate(-2deg) translateX(10px) translateY(-5px);
+    }
+    50% {
+      transform: scale(1.05) rotate(0deg) translateX(0) translateY(0);
     }
     55% {
-      transform: scale(1) rotate(5deg) translateX(-5px) translateY(5px);
+      transform: scale(1.1) rotate(5deg) translateX(-15px) translateY(10px);
     }
-    70% {
+    60% {
+      transform: scale(1.05) rotate(3deg) translateX(-10px) translateY(5px);
+    }
+    65% {
       transform: scale(1) rotate(0deg) translateX(0) translateY(0);
     }
+    70% {
+      transform: scale(1.1) rotate(0deg) translateX(0) translateY(0);
+    }
+    75% {
+      transform: scale(1.15) rotate(0deg) translateY(-5px);
+    }
+    80% {
+      transform: scale(0.9) rotate(0deg) translateY(5px);
+    }
+    85% {
+      transform: scale(1.15) rotate(0deg) translateY(-5px);
+    }
     90% {
-        opacity: 1;
-        transform: scale(1.05);
+      opacity: 1;
+      transform: scale(1.1) translateY(0);
     }
     100% {
       opacity: 0;

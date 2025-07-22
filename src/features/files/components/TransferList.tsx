@@ -1,4 +1,4 @@
-import { FileText, X, Pause, Play, ArrowUpRight, ArrowDownLeft } from 'lucide-react';
+import { X, Pause, Play, ArrowUpRight, ArrowDownLeft } from 'lucide-react';
 
 import { Transfer } from '../../../types';
 
@@ -12,6 +12,34 @@ interface TransferListProps {
 const formatRate = (rate: number) => {
   if (rate < 1024) return `${rate.toFixed(1)} KB/s`;
   return `${(rate / 1024).toFixed(1)} MB/s`;
+};
+
+// 格式化文件大小，根据大小自动选择合适的单位（B、KB、MB、GB）
+const formatFileSize = (size: string | number) => {
+  // 如果已经是格式化后的字符串，直接返回
+  if (typeof size === 'string' && size.includes(' ')) {
+    return size;
+  }
+  
+  // 处理数字或字符串类型的size
+  let sizeNum: number;
+  if (typeof size === 'number') {
+    sizeNum = size;
+  } else {
+    // 尝试将字符串转换为数字
+    sizeNum = parseFloat(size) || 0;
+  }
+  
+  // 根据大小选择合适的单位
+  if (sizeNum < 1024) {
+    return `${sizeNum.toFixed(0)}b`;
+  } else if (sizeNum < 1024 * 1024) {
+    return `${(sizeNum / 1024).toFixed(1)}k`;
+  } else if (sizeNum < 1024 * 1024 * 1024) {
+    return `${(sizeNum / 1024 / 1024).toFixed(1)}m`;
+  } else {
+    return `${(sizeNum / 1024 / 1024 / 1024).toFixed(2)}g`;
+  }
 };
 
 export default function TransferList({ transfers, onPause, onResume, onCancel }: TransferListProps) {
@@ -58,11 +86,14 @@ const TransferItem = ({ transfer, onPause, onResume, onCancel }: { transfer: Tra
           {transfer.direction === 'sent' ? <ArrowUpRight size={24} className="text-blue-400"/> : <ArrowDownLeft size={24} className="text-green-400"/>}
           <div>
             <p className="font-semibold">{transfer.name}</p>
-            <p className="text-xs text-gray-400">
-              {transfer.direction === 'sent' 
-                ? `You -> ${transfer.targetDevice || 'Unknown'}` 
-                : `${transfer.sourceDevice || 'Unknown'} -> You`}
-            </p>
+            <div className="flex items-center gap-2">
+              <p className="text-xs text-gray-300">{formatFileSize(transfer.size)}</p>
+              <p className="text-xs text-gray-400">
+                {transfer.direction === 'sent' 
+                  ? `You -> ${transfer.targetDevice || 'Unknown'}` 
+                  : `${transfer.sourceDevice || 'Unknown'} -> You`}
+              </p>
+            </div>
           </div>
         </div>
         <div className="flex items-center gap-4">

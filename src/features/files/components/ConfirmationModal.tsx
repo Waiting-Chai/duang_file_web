@@ -1,4 +1,3 @@
-import React from 'react';
 import { Device } from '../../../types';
 import { socketService } from '../../../api/socket';
 
