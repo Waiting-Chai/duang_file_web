@@ -48,9 +48,9 @@ export default function DeviceList() {
               
               {/* 悬浮提示框 */}
               <div className="absolute opacity-0 group-hover:opacity-100 invisible group-hover:visible bg-gray-800 text-white p-3 rounded-lg shadow-lg z-20 w-48 text-left left-1/2 transform -translate-x-1/2 top-full mt-2 border border-gray-600 overflow-hidden transition-all duration-200 ease-in-out">
-                <p className="font-bold mb-1">{device.username} {isCurrentDevice && "(当前设备)"}</p>
-                <p className="text-sm mb-1">设备ID: <span className="text-gray-300">{device.id.substring(0, 15)}...</span></p>
-                <p className="text-sm">IP地址: <span className="text-gray-300">{device.ip}</span></p>
+                <p className="font-bold mb-1">{device.username} {isCurrentDevice && "(Current Device)"}</p>
+<p className="text-sm mb-1">Device ID: <span className="text-gray-300">{device.id.substring(0, 15)}...</span></p>
+<p className="text-sm">IP Address: <span className="text-gray-300">{device.ip}</span></p>
               </div>
             </div>
           );

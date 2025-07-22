@@ -35,17 +35,25 @@ export default function FileTransferPage() {
   const handleConfirmSend = () => {
     if (selectedDevices.length === 0) {
       // Handle broadcast logic if needed, for now, we require a selection
-      console.error("Please select at least one device to send files to.");
+      console.error("请至少选择一个设备来发送文件。");
       return;
     }
 
+    // 获取所有选中设备的ID和名称
+    const targetIds: string[] = [];
+    const targetNames: string[] = [];
+    
     selectedDevices.forEach(deviceId => {
       const device = devices.find(d => d.id === deviceId);
       if (device) {
-        filesToConfirm.forEach(file => {
-          transferService.sendFile(file, device.id, device.username);
-        });
+        targetIds.push(device.id);
+        targetNames.push(device.username);
       }
+    });
+
+    // 为每个文件创建一个传输任务，发送给所有选中的设备
+    filesToConfirm.forEach(file => {
+      transferService.sendFile(file, targetIds, targetNames);
     });
 
     setIsSendModalOpen(false);
@@ -67,7 +75,7 @@ export default function FileTransferPage() {
 
   const handleRejectReceive = () => {
     if (incomingRequest) {
-      transferService.rejectTransfer(incomingRequest.fileId);
+      transferService.rejectTransfer(incomingRequest);
       setIncomingRequest(null);
     }
   };

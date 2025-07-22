@@ -39,7 +39,7 @@ export default function ConfirmationModal({ isOpen, files, targetDevices, onConf
           {targetDevices.length > 0 ? (
             <ul className="bg-gray-700 p-3 rounded-md max-h-48 overflow-y-auto divide-y divide-gray-600">
               {targetDevices.map((device) => {
-                const isCurrentDevice = device.id === socketService.getCurrentDeviceId();
+                const isCurrentDevice = device.id === socketService.getClientId();
                 return (
                   <li key={device.id} className={`py-2 px-1 flex items-center justify-between ${isCurrentDevice ? 'bg-green-900 border-l-4 border-green-500' : ''}`}>
                     <div className="flex items-center">

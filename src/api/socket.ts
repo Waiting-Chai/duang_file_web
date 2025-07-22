@@ -14,7 +14,6 @@ const messageSubject = new Subject<WebSocketMessage>();
 class SocketService {
   private socket: WebSocket | null = null;
   private deviceId: string = '';
-  private ipAddrLocal: string = '';
   private isManualDisconnect = false;
   private isReload = false;
   private reconnectAttempts = 0;
@@ -26,19 +25,7 @@ class SocketService {
     if (navigationEntries.length > 0 && (navigationEntries[0] as PerformanceNavigationTiming).type === 'reload') {
       this.isReload = true;
     }
-    
-    let addrList = this.getRealIPv4Addresses();
-    if (addrList.length > 0) {
-      this.ipAddrLocal = addrList[0];
-    }
   }
-
-  private getRealIPv4Addresses(): string[] {
-    // 浏览器环境中无法直接获取本机IP地址
-    // 返回一个空数组或默认值
-    return ['127.0.0.1'];
-  }
-
 
   private getDeviceInfo(): string {
     // 尝试从sessionStorage获取已保存的设备ID
@@ -48,7 +35,7 @@ class SocketService {
     }
     
     // 如果没有保存的设备ID，则生成一个新的
-    const username = sessionStorage.getItem('username') || '未知用户';
+    const username = sessionStorage.getItem('username') || 'Unknown User';
     const parser = new UAParser(navigator.userAgent);
     const result = parser.getResult();
     const deviceName = result.device.model ? `${result.device.vendor} ${result.device.model}` : result.os.name;
@@ -63,7 +50,7 @@ class SocketService {
   connect() {
     const username = sessionStorage.getItem('username');
     if (!username) {
-      console.error('未找到用户名，请先登录');
+      console.error('Username not found, please log in first');
       window.location.href = '/login';
       return;
     }
@@ -71,19 +58,19 @@ class SocketService {
     this.deviceId = this.getDeviceInfo();
 
     if (this.socket && this.socket.readyState === WebSocket.OPEN) {
-      console.log('WebSocket 已连接');
+      console.log('WebSocket connected');
       return;
     }
 
     this.isManualDisconnect = false;
 
-    const url = `${config.wsUrl}?deviceId=${encodeURIComponent(this.deviceId)}&ip=${this.ipAddrLocal}&username=${username}`;
+    const url = `${config.wsUrl}?deviceId=${encodeURIComponent(this.deviceId)}&username=${username}`;
     this.socket = new WebSocket(url);
     this.socket.binaryType = 'arraybuffer'; // 必须设置为 arraybuffer
 
     this.socket.onopen = () => {
-      console.log('WebSocket 连接成功');
-      toast.success('连接成功');
+      console.log('WebSocket connection successful');
+      toast.success('Connection successful');
       this.isReload = false;
       this.reconnectAttempts = 0; // 重置重连计数
       this.sendMessage('get_client_list', {});
@@ -160,36 +147,36 @@ class SocketService {
     };
 
     this.socket.onclose = (event) => {
-      console.log('WebSocket 连接关闭:', event.reason);
+      console.log('WebSocket connection closed:', event.reason);
       if (!this.isManualDisconnect && !this.isReload) {
-        toast.error('连接已断开，尝试重新连接...');
+        toast.error('Connection disconnected, trying to reconnect...');
         this.tryReconnect();
       }
       clientListSubject.next([]);
     };
 
     this.socket.onerror = (error) => {
-      console.error('WebSocket 错误:', error);
+      console.error('WebSocket error:', error);
     };
   }
 
   private tryReconnect() {
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-      console.log(`已达到最大重连次数 (${this.maxReconnectAttempts})，停止重连`);
-      toast.error('无法连接到服务器，请检查网络或刷新页面');
+      console.log(`Maximum reconnection attempts reached (${this.maxReconnectAttempts}), stopping reconnection`);
+      toast.error('Unable to connect to the server, please check the network or refresh the page');
       return;
     }
 
     this.reconnectAttempts++;
     const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts), 30000); // 指数退避，最大30秒
-    console.log(`尝试第 ${this.reconnectAttempts} 次重连，延迟 ${delay}ms`);
+    console.log(`Attempting to reconnect for the ${this.reconnectAttempts} time, delay ${delay}ms`);
 
     if (this.reconnectTimeout) {
       clearTimeout(this.reconnectTimeout);
     }
 
     this.reconnectTimeout = setTimeout(() => {
-      console.log('正在重新连接...');
+      console.log('Reconnecting...');
       this.connect();
     }, delay);
   }
@@ -204,7 +191,7 @@ class SocketService {
 
   sendMessage(type: string, payload: any) {
     if (!this.socket || this.socket.readyState !== WebSocket.OPEN) {
-      console.error('WebSocket 未连接');
+      console.error('WebSocket not connected');
       return;
     }
 
@@ -237,11 +224,11 @@ class SocketService {
     }
   }
 
-  getClientList() {
+  getClientList$() {
     return clientListSubject.asObservable();
   }
 
-  getCurrentDeviceId() {
+  getClientId(): string {
     return this.deviceId;
   }
 

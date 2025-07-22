@@ -11,9 +11,17 @@ interface ReceiveConfirmationModalProps {
 const ReceiveConfirmationModal: React.FC<ReceiveConfirmationModalProps> = ({ isOpen, request, onConfirm, onCancel }) => {
   if (!isOpen) return null;
 
-  const fileSize = request.fileSize > 1024 * 1024
-    ? `${(request.fileSize / 1024 / 1024).toFixed(2)} MB`
-    : `${(request.fileSize / 1024).toFixed(2)} KB`;
+  // 格式化文件大小
+  const fileSize = request.fileSize > 1024 * 1024 * 1024
+    ? `${(request.fileSize / 1024 / 1024 / 1024).toFixed(2)} GB`
+    : request.fileSize > 1024 * 1024
+      ? `${(request.fileSize / 1024 / 1024).toFixed(2)} MB`
+      : `${(request.fileSize / 1024).toFixed(2)} KB`;
+      
+  // 格式化分片大小
+  const chunkSize = request.chunkSize > 1024 * 1024
+    ? `${(request.chunkSize / 1024 / 1024).toFixed(2)} MB`
+    : `${(request.chunkSize / 1024).toFixed(2)} KB`;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
@@ -34,7 +42,11 @@ const ReceiveConfirmationModal: React.FC<ReceiveConfirmationModalProps> = ({ isO
             </svg>
             <p className="font-mono break-all text-gray-200">{request.fileName}</p>
           </div>
-          <p className="text-sm text-gray-400 ml-8">File size: {fileSize}</p>
+          <div className="ml-8 space-y-1">
+            <p className="text-sm text-gray-300">File Size: <span className="text-gray-200 font-medium">{fileSize}</span></p>
+<p className="text-sm text-gray-300">Chunk Count: <span className="text-gray-200 font-medium">{request.totalChunks}</span></p>
+<p className="text-sm text-gray-300">Chunk Size: <span className="text-gray-200 font-medium">{chunkSize}</span></p>
+          </div>
         </div>
         <div className="flex justify-end gap-4">
           <button 

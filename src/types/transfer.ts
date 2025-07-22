@@ -26,7 +26,9 @@ export interface StartUploadPayload {
   fileId: string;
   fileName: string;
   fileSize: number;
-  targetId: string;
+  totalChunks: number;
+  targetIds: string[];
+  chunkSize: number;
 }
 
 /**
@@ -48,6 +50,8 @@ export interface FileTransferRequest {
   fileName: string;
   fileSize: number;
   fromId: string;
+  totalChunks: number;
+  chunkSize: number;
 }
 
 /**
@@ -57,6 +61,16 @@ export interface FileTransferRequest {
 export interface FileTransferResponse {
   fileId: string;
   accept: boolean;
+  fromId: string;
+}
+
+/**
+ * 传输控制（暂停/恢复/取消）
+ * @description Corresponds to `TransferControlPayload` in Go backend
+ */
+export interface TransferControl {
+  fileId: string;
+  action: 'pause' | 'resume' | 'cancel';
 }
 
 /**
@@ -68,6 +82,8 @@ export interface TransferProgress {
   progress: number; // 0-100
   speed: string; // e.g. "20kb/s"
   status?: TransferStatus; // 扩展字段，用于前端状态管理
+  bytesTransferred?: number; // 已传输的字节数
+  totalBytes?: number; // 总字节数
 }
 
 /**

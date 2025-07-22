@@ -1,6 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { socketService } from '../api/socket';
-import { Subscription } from 'rxjs';
 import { Device } from '../types';
 
 interface DeviceContextType {
@@ -18,17 +17,16 @@ export const DeviceProvider = ({ children }: { children: ReactNode }) => {
   const [currentDeviceId, setCurrentDeviceId] = useState<string>('');
 
   useEffect(() => {
-    // 获取当前设备ID
-    setCurrentDeviceId(socketService.getCurrentDeviceId());
+    const currentId = socketService.getClientId();
+    if (currentId) {
+      setCurrentDeviceId(currentId);
+    }
 
-    const subscription: Subscription = socketService.getClientList().subscribe((newClients: Device[]) => {
+    const subscription = socketService.getClientList$().subscribe((newClients: Device[]) => {
       setDevices(newClients);
-      
-      // 在客户端列表更新后，再次检查并更新当前设备ID
-      // 这确保了在页面刷新后，当WebSocket重新连接并获取设备列表时，currentDeviceId会被正确更新
-      const currentId = socketService.getCurrentDeviceId();
-      if (currentId && currentId !== currentDeviceId) {
-        setCurrentDeviceId(currentId);
+      const updatedCurrentId = socketService.getClientId();
+      if (updatedCurrentId && updatedCurrentId !== currentDeviceId) {
+        setCurrentDeviceId(updatedCurrentId);
       }
     });
 
