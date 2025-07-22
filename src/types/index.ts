@@ -1,13 +1,12 @@
+// 这个Device定义是为了兼容现有代码，实际应该使用types/device.ts中的定义
 export interface Device {
   id: string;
   username: string;
   ip: string;
-  type: string;
-  // You can add other device properties received from the backend here
-  // e.g., os, browser, type, etc.
+  type?: string;
 }
 
-export type TransferStatus = 'sending' | 'receiving' | 'paused' | 'completed' | 'failed';
+export type TransferStatus = 'starting' | 'sending' | 'receiving' | 'paused' | 'completed' | 'failed' | 'ready_to_receive_chunks';
 export type TransferDirection = 'sent' | 'received';
 
 export interface Transfer {

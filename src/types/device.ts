@@ -1,9 +1,12 @@
+export interface DeviceInfo {
+  ip: string;
+  device: string;
+  os: string;
+  browser: string;
+  timestamp: number;
+}
+
 export interface Device {
   id: string;
-  deviceInfo: {
-    ip: string;
-    deviceName: string;
-    os: string;
-    browser: string;
-  };
+  deviceInfo: DeviceInfo;
 }
