@@ -160,14 +160,31 @@ class TransferService {
           p2pService.sendFileChunk(targetId, combinedChunk.buffer);
         }
 
-        this.updateTransferProgress(fileId, Math.floor((i + 1) * 100 / totalChunks), undefined, 'sending');
+        this.updateTransferProgress(fileId, (i + 1) / totalChunks, undefined, 'sending');
       } catch (error) {
         console.error('发送文件块失败:', error);
         this.updateTransferState({ fileId, status: 'failed' });
         break;
       }
     }
-    this.updateTransferState({ fileId, status: 'completed', progress: 100 });
+    this.updateTransferState({ fileId, status: 'completed', progress: 1 });
+  }
+
+  public updateTransferWithDownload(fileId: string, blobUrl: string) {
+    const currentTransfers = this.transfers.getValue();
+    const existingTransferIndex = currentTransfers.findIndex(t => t.id === fileId);
+
+    if (existingTransferIndex > -1) {
+      const updatedTransfers = [...currentTransfers];
+      const existingTransfer = { ...updatedTransfers[existingTransferIndex] };
+      
+      existingTransfer.status = 'completed';
+      existingTransfer.progress = 1;
+      existingTransfer.blobUrl = blobUrl;
+
+      updatedTransfers[existingTransferIndex] = existingTransfer;
+      this.transfers.next(updatedTransfers);
+    }
   }
 
   acceptTransfer(request: FileTransferRequest) {

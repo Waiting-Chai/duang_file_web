@@ -17,9 +17,13 @@
     /* Linting */
     "strict": true,
     "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true
+    "noUnusedParameters": false,
+    "noFallthroughCasesInSwitch": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    }
   },
-  "include": ["src"],
+  "include": ["src", "src/types/fs-access.d.ts", "src/types/global.d.ts"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

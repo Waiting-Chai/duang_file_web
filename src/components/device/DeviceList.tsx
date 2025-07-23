@@ -1,5 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useDevices } from '../../contexts/DeviceContext';
+import { Device } from '../../types';
+import { useFloating, offset, flip, shift, arrow } from '@floating-ui/react';
 
 export default function DeviceList() {
   // 添加Webkit浏览器的滚动条样式
@@ -18,6 +21,21 @@ export default function DeviceList() {
   `;
 
   const { devices, selectedDevices, toggleDeviceSelection, currentDeviceId } = useDevices();
+  const [hoveredDevice, setHoveredDevice] = useState<Device | null>(null);
+
+  const { x, y, refs, strategy, middlewareData } = useFloating({
+    placement: 'bottom',
+    middleware: [offset(10), flip(), shift(), arrow({ element: document.createElement('div') })],
+  });
+
+  const handleMouseEnter = (device: Device, e: React.MouseEvent<HTMLDivElement>) => {
+    refs.setReference(e.currentTarget);
+    setHoveredDevice(device);
+  };
+
+  const handleMouseLeave = () => {
+    setHoveredDevice(null);
+  };
 
   return (
     <div className="bg-gray-800 rounded-lg p-6 h-full">
@@ -37,6 +55,8 @@ export default function DeviceList() {
                 group
               `}
               onClick={() => toggleDeviceSelection(device.id)}
+              onMouseEnter={(e) => handleMouseEnter(device, e)}
+              onMouseLeave={handleMouseLeave}
             >
               {isCurrentDevice && <div className="absolute -top-2 left-1/2 transform -translate-x-1/2 bg-green-400 text-green-900 px-1.5 py-0.5 rounded-full text-[10px] font-bold">CURRENT</div>}
               <div className="text-3xl mb-1">{isCurrentDevice ? '👤' : '💻'}</div>
@@ -45,17 +65,27 @@ export default function DeviceList() {
                 {isCurrentDevice && <span className="ml-1 text-xs bg-green-300 text-green-900 px-1 py-0.5 rounded-full font-bold animate-pulse">ME</span>}
               </div>
               <div className="text-xs text-gray-400 truncate w-full">{device.ip}</div>
-              
-              {/* 悬浮提示框 */}
-              <div className="absolute opacity-0 group-hover:opacity-100 invisible group-hover:visible bg-gray-800 text-white p-3 rounded-lg shadow-lg z-20 w-48 text-left left-1/2 transform -translate-x-1/2 top-full mt-2 border border-gray-600 overflow-hidden transition-all duration-200 ease-in-out">
-                <p className="font-bold mb-1">{device.username} {isCurrentDevice && "(Current Device)"}</p>
-<p className="text-sm mb-1">Device ID: <span className="text-gray-300">{device.id.substring(0, 15)}...</span></p>
-<p className="text-sm">IP Address: <span className="text-gray-300">{device.ip}</span></p>
-              </div>
             </div>
           );
         })}
       </div>
+      {hoveredDevice && createPortal(
+        <div
+          ref={refs.setFloating}
+          style={{
+            position: strategy,
+            top: y ?? 0,
+            left: x ?? 0,
+            zIndex: 1000,
+          }}
+          className="bg-gray-800 text-white p-3 rounded-lg shadow-lg min-w-max border border-gray-600"
+        >
+          <p className="font-bold mb-1">{hoveredDevice.username} {hoveredDevice.id === currentDeviceId && "(Current Device)"}</p>
+          <p className="text-sm mb-1" style={{wordBreak: 'break-all'}}>Device ID: <span className="text-gray-300">{hoveredDevice.id}</span></p>
+          <p className="text-sm">IP Address: <span className="text-gray-300">{hoveredDevice.ip}</span></p>
+        </div>,
+        document.body
+      )}
     </div>
   );
 }

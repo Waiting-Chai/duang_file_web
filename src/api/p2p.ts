@@ -128,21 +128,12 @@ export class FileReceiver {
       const blob = new Blob(chunks, { type: this.getMimeType(this.fileName) });
       console.log(`Blob创建成功，大小: ${blob.size}字节`);
       
-      // 创建下载链接
+      // 创建Blob URL并传递给TransferService
       const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = this.fileName;
-      
-      // 触发下载
-      console.log(`开始下载文件 ${this.fileName}`);
-      a.click();
-      
-      // 释放URL对象
-      setTimeout(() => {
-        URL.revokeObjectURL(url);
-        console.log(`文件 ${this.fileName} 下载完成，已释放URL对象`);
-      }, 100);
+      if (window.transferService) {
+        window.transferService.updateTransferWithDownload(this.fileId, url);
+      }
+      console.log(`文件 ${this.fileName} 准备就绪，下载链接已创建`);
     } catch (error: unknown) {
       console.error(`组装和下载文件 ${this.fileName} 时出错:`, error);
       if (window.transferService) {

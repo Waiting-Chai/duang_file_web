@@ -1,4 +1,4 @@
-import { X, Pause, Play, ArrowUpRight, ArrowDownLeft } from 'lucide-react';
+import { X, Pause, Play, ArrowUpRight, ArrowDownLeft, Download, Folder } from 'lucide-react';
 
 import { Transfer, TransferStatus } from '../../../types';
 
@@ -123,7 +123,7 @@ export default function TransferList({ transfers, onPause, onResume, onCancel }:
   );
 }
 
-const TransferItem = ({ transfer, onPause, onResume, onCancel }: { transfer: Transfer } & Omit<TransferListProps, 'transfers'>) => {
+const TransferItem = ({ transfer, onPause, onResume, onCancel }: { transfer: Transfer, onPause: (id: string | number) => void, onResume: (id: string | number) => void, onCancel: (id: string | number) => void }) => {
   return (
     <div className="bg-gray-700 p-4 rounded-lg">
       <div className="flex items-center justify-between mb-2">
@@ -181,6 +181,27 @@ const TransferItem = ({ transfer, onPause, onResume, onCancel }: { transfer: Tra
               >
                 <X size={16} className="text-gray-300" />
               </button>
+            )}
+            {transfer.status === 'completed' && transfer.direction === 'received' && (
+              <>
+                {transfer.filePath ? (
+                  <div
+                    className="p-1.5"
+                    title={`Saved to: ${transfer.filePath}`}
+                  >
+                    <Folder size={16} className="text-green-400" />
+                  </div>
+                ) : transfer.blobUrl && (
+                  <a 
+                    href={transfer.blobUrl}
+                    download={transfer.name}
+                    className="p-1.5 rounded-full hover:bg-gray-600 transition-colors"
+                    title="Download"
+                  >
+                    <Download size={16} className="text-gray-300" />
+                  </a>
+                )}
+              </>
             )}
           </div>
         </div>

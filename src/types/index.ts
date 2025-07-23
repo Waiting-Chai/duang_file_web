@@ -31,4 +31,6 @@ export interface Transfer {
   sourceDevice?: string;
   targetDevice?: string;
   file?: File; // Add file object for P2P transfer
+  filePath?: string; // For completed downloads, the path on the local file system
+  blobUrl?: string; // For completed downloads, a temporary URL for the file blob
 }
