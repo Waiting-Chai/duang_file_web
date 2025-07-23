@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { socketService } from '../../api/socket';
-import DuangAnimation from '../../components/ui/DuangAnimation';
+import StaggeredPhysicsGrid from '../../components/ui/StaggeredPhysicsGrid';
+import JelloStretchyFont from '../../components/ui/JelloStretchyFont';
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -21,9 +22,10 @@ export default function LoginPage() {
     navigate('/app');
   };
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-900 text-gray-200">
-      {showDuang && <DuangAnimation onAnimationEnd={handleAnimationEnd} />}
-      <div className="w-full max-w-md p-8 space-y-6 bg-gray-800 rounded-xl shadow-lg">
+    <div className="flex items-center justify-center min-h-screen bg-gray-900 text-gray-200 relative overflow-hidden">
+      <StaggeredPhysicsGrid />
+      {showDuang && <JelloStretchyFont onAnimationEnd={handleAnimationEnd} text="DUANG" />}
+      <div className="w-full max-w-md p-8 space-y-6 bg-gray-800 rounded-xl shadow-lg z-10">
         <h1 className="text-3xl font-bold text-center">Duang File</h1>
         <form className="space-y-6" onSubmit={handleLogin}>
           <div>

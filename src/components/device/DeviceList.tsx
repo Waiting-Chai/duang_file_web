@@ -23,7 +23,7 @@ export default function DeviceList() {
   const { devices, selectedDevices, toggleDeviceSelection, currentDeviceId } = useDevices();
   const [hoveredDevice, setHoveredDevice] = useState<Device | null>(null);
 
-  const { x, y, refs, strategy, middlewareData } = useFloating({
+  const { x, y, refs, strategy } = useFloating({
     placement: 'bottom',
     middleware: [offset(10), flip(), shift(), arrow({ element: document.createElement('div') })],
   });
