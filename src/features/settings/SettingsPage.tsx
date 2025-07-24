@@ -6,18 +6,13 @@ import { Label } from '@/components/ui/label';
 import { get, set } from '@/utils/db';
 
 const SettingsPage: React.FC = () => {
-  const [dirHandle, setDirHandle] = useState<any | null>(null);
   const [dirName, setDirName] = useState<string>('');
   const [autoSave, setAutoSave] = useState<boolean>(false);
 
   useEffect(() => {
     const loadHandle = async () => {
-      const handle = await get<FileSystemDirectoryHandle>('directoryHandle');
       const name = await get<string>('downloadPathName');
       const autoSaveEnabled = await get<boolean>('autoSave');
-      if (handle) {
-        setDirHandle(handle);
-      }
       if (name) {
         setDirName(name);
       }
@@ -33,7 +28,6 @@ const SettingsPage: React.FC = () => {
       const handle = await window.showDirectoryPicker();
       await set('directoryHandle', handle);
       await set('downloadPathName', handle.name);
-      setDirHandle(handle);
       setDirName(handle.name);
     } catch (error) {
       console.error('Error selecting directory:', error);

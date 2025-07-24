@@ -2,7 +2,6 @@ import { useEffect } from 'react';
 import { Routes, Route, Navigate, NavLink, useNavigate } from 'react-router-dom';
 import FileTransferPage from '../../features/files/FileTransferPage';
 import BroadcastPage from '../../features/broadcast/BroadcastPage';
-import DeviceList from '../device/DeviceList';
 import SettingsPage from '../../features/settings/SettingsPage';
 import { DeviceProvider } from '../../contexts/DeviceContext';
 
