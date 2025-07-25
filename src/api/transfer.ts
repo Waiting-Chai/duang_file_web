@@ -12,6 +12,7 @@ class TransferService {
   constructor() {
     this.listenForP2PFileRequests();
     this.listenForP2PFileResponses();
+    this.listenForP2PControlMessages();
   }
 
   public onFileTransferRequest$ = p2pService.onFileTransferRequest.asObservable();
@@ -30,12 +31,42 @@ class TransferService {
         const currentTransfers = this.transfers.getValue();
         const transfer = currentTransfers.find(t => t.id === fileId);
         if (transfer && transfer.file) {
-          this.updateTransferState({ id: fileId, status: 'sending' });
-          this.startChunking(transfer.file, fileId, [fromId]);
+          this.updateTransferState({ id: fileId, status: 'sending', targetId: fromId });
+          this.startChunking(transfer, [fromId]);
         }
       } else {
         // Handle rejection: remove transfer from UI
         this.transfers.next(this.transfers.getValue().filter(t => t.id !== fileId));
+      }
+    });
+  }
+
+  private listenForP2PControlMessages() {
+    p2pService.onControlMessage.subscribe(({ fromId, payload }) => {
+      console.log(`[Service] Received control message from ${fromId}:`, payload);
+      const { type, fileId } = payload;
+      switch (type) {
+        case 'pause_transfer':
+          console.log(`[Service] Pausing transfer ${fileId} from ${fromId}`);
+          this.updateTransferState({ id: fileId, status: 'paused', isPaused: true });
+          break;
+        case 'resume_transfer': {
+          console.log(`[Service] Resuming transfer ${fileId} from ${fromId}`);
+          const transfer = this.transfers.getValue().find(t => String(t.id) === String(fileId));
+          if (transfer) {
+            if (transfer.direction === 'sent') {
+              // Sender resumes chunking
+              this.updateTransferState({ id: fileId, status: 'sending', isPaused: false });
+              this.startChunking(transfer, (transfer.targetId || '').split(','));
+            } else {
+              // Receiver just updates state
+              this.updateTransferState({ id: fileId, status: 'receiving', isPaused: false });
+            }
+          } else {
+            console.error(`[Service] Could not find transfer to resume: ${fileId}`);
+          }
+          break;
+        }
       }
     });
   }
@@ -79,6 +110,7 @@ class TransferService {
       direction: 'sent',
       targetDevice: targetDeviceNames.join(', '),
       file: file, // Store file object for later use
+      targetId: targetClientIds.join(','), // Store targetId immediately
     };
     this.transfers.next([...this.transfers.getValue(), newTransfer]);
 
@@ -112,11 +144,22 @@ class TransferService {
     });
   }
 
-  private async startChunking(file: File, fileId: string, targetClientIds: string[]) {
+  private async startChunking(transfer: Transfer, targetClientIds: string[]) {
+    const { file, id: fileId } = transfer;
+    if (!file) return;
+
+    this.updateTransferState({ id: fileId, isPaused: false });
     let lastTimestamp = Date.now();
     let lastSentBytes = 0;
     const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
-    for (let i = 0; i < totalChunks; i++) {
+    let i = transfer.sentChunks || 0;
+
+    while (i < totalChunks) {
+      const currentTransferState = this.transfers.getValue().find(t => t.id === fileId);
+      if (currentTransferState?.isPaused) {
+        this.updateTransferState({ id: fileId, status: 'paused' });
+        return; // Stop chunking
+      }
       const start = i * CHUNK_SIZE;
       const end = Math.min(start + CHUNK_SIZE, file.size);
       const chunk = file.slice(start, end);
@@ -127,7 +170,7 @@ class TransferService {
       try {
         for (const targetId of targetClientIds) {
           // 添加块索引信息到文件块中
-          const fileIdBytes = new TextEncoder().encode(fileId);
+          const fileIdBytes = new TextEncoder().encode(String(fileId));
           const fileIdLengthBytes = new Uint8Array(new Uint32Array([fileIdBytes.length]).buffer);
           const chunkIndexBytes = new Uint8Array(new Uint32Array([i]).buffer); // 添加块索引
           
@@ -168,14 +211,20 @@ class TransferService {
         lastTimestamp = now;
         lastSentBytes = sentBytes;
 
-        this.updateTransferProgress(fileId, (i + 1) / totalChunks, rate, 'sending');
+        this.updateTransferProgress(String(fileId), (i + 1) / totalChunks, rate, 'sending');
+        this.updateTransferState({ id: fileId, sentChunks: i + 1 });
+
+        i++;
       } catch (error) {
         console.error('发送文件块失败:', error);
         this.updateTransferState({ id: fileId, status: 'failed' });
-        break;
+        return;
       }
     }
-    this.updateTransferState({ id: fileId, status: 'completed', progress: 1 });
+
+    if (!this.transfers.getValue().find(t => t.id === fileId)?.isPaused) {
+      this.updateTransferState({ id: fileId, status: 'completed', progress: 1 });
+    }
   }
 
   public updateTransferWithDownload(fileId: string, blobUrl: string) {
@@ -245,15 +294,62 @@ class TransferService {
 
   // Pause, Resume, Cancel are more complex in P2P and require more signaling.
   // For now, we will remove them to simplify.
-  pauseTransfer(id: string) {
-    console.log(`暂停功能暂未在P2P模式下实现: ${id}`);
-    // To implement: send a 'pause' message via data channel
-    // The other peer needs to handle this and stop sending/receiving chunks
+  pauseTransfer(id: string | number) {
+    console.log(`[Service] pauseTransfer called for transfer: ${id}`);
+    console.log('[Service] Current transfers:', this.transfers.getValue());
+    const transfer = this.transfers.getValue().find(t => String(t.id) === String(id));
+
+    if (!transfer) {
+      console.error(`[Service] Could not find transfer for pausing: ${id}`);
+      return;
+    }
+
+    const peerId = transfer.direction === 'sent' ? transfer.targetId : transfer.sourceDevice;
+
+    if (peerId) {
+      console.log(`[Service] Sending pause message to ${peerId}`);
+      this.updateTransferState({ id, status: 'paused', isPaused: true });
+      const targetIds = peerId.split(',');
+      for (const targetId of targetIds) {
+        p2pService.sendP2PMessage(targetId, 'control_message', {
+          type: 'pause_transfer',
+          fileId: id
+        });
+      }
+    } else {
+      console.error(`[Service] Could not find peerId (targetId or sourceDevice) for pausing: ${id}`);
+    }
   }
 
-  resumeTransfer(id: string) {
-    console.log(`恢复功能暂未在P2P模式下实现: ${id}`);
-    // To implement: send a 'resume' message
+  resumeTransfer(id: string | number) {
+    console.log(`[Service] resumeTransfer called for transfer: ${id}`);
+    const transfer = this.transfers.getValue().find(t => String(t.id) === String(id));
+    if (!transfer) {
+      console.error(`[Service] Could not find transfer for resuming: ${id}`);
+      return;
+    }
+
+    const peerId = transfer.direction === 'sent' ? transfer.targetId : transfer.sourceDevice;
+
+    if (peerId) {
+      console.log(`[Service] Sending resume message to ${peerId}`);
+      const newStatus = transfer.direction === 'sent' ? 'sending' : 'receiving';
+      this.updateTransferState({ id, isPaused: false, status: newStatus });
+      const targetIds = peerId.split(',');
+      for (const targetId of targetIds) {
+        p2pService.sendP2PMessage(targetId, 'control_message', {
+          type: 'resume_transfer',
+          fileId: id
+        });
+      }
+
+      // Only the sender should resume chunking
+      if (transfer.direction === 'sent') {
+        this.startChunking(transfer, targetIds);
+      }
+    } else {
+      console.error(`[Service] Could not find peerId (targetId or sourceDevice) for resuming: ${id}`);
+    }
   }
 
   cancelTransfer(id: string) {

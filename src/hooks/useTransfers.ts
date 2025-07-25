@@ -16,10 +16,12 @@ export function useTransfers() {
   }, []);
 
   const handlePause = (id: string | number) => {
+    console.log(`[Hook] handlePause called for transfer: ${id}`);
     transferService.pauseTransfer(String(id));
   };
 
   const handleResume = (id: string | number) => {
+    console.log(`[Hook] handleResume called for transfer: ${id}`);
     transferService.resumeTransfer(String(id));
   };
 

@@ -33,4 +33,7 @@ export interface Transfer {
   file?: File; // Add file object for P2P transfer
   filePath?: string; // For completed downloads, the path on the local file system
   blobUrl?: string; // For completed downloads, a temporary URL for the file blob
+  isPaused?: boolean; // To control the pause state of the transfer
+  sentChunks?: number; // To track the number of chunks sent
+  targetId?: string; // The ID of the target client for P2P communication
 }

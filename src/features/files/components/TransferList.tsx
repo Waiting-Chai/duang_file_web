@@ -157,7 +157,7 @@ const TransferItem = ({ transfer, onPause, onResume, onCancel }: { transfer: Tra
           <div className="flex items-center gap-1.5">
             {(transfer.status === 'sending' || transfer.status === 'receiving') && (
               <button 
-                onClick={() => onPause(transfer.id)} 
+                onClick={() => { console.log(`[UI] Pause button clicked for transfer: ${transfer.id}`); onPause(transfer.id); }} 
                 className="p-1.5 rounded-full hover:bg-gray-600 transition-colors"
                 title="Pause"
               >
@@ -166,7 +166,7 @@ const TransferItem = ({ transfer, onPause, onResume, onCancel }: { transfer: Tra
             )}
             {transfer.status === 'paused' && (
               <button 
-                onClick={() => onResume(transfer.id)} 
+                onClick={() => { console.log(`[UI] Resume button clicked for transfer: ${transfer.id}`); onResume(transfer.id); }} 
                 className="p-1.5 rounded-full hover:bg-gray-600 transition-colors"
                 title="Resume"
               >

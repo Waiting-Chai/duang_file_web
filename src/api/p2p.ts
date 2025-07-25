@@ -200,6 +200,7 @@ export class P2PService {
   public onDataChannelOpen = new Subject<string>();
   public onFileTransferRequest = new Subject<FileTransferRequest>();
   public onFileTransferResponse = new Subject<FileTransferResponse>();
+  public onControlMessage = new Subject<{ fromId: string; payload: any }>();
 
   constructor() {
     this.listenForWebRTCSignals();
@@ -287,6 +288,9 @@ export class P2PService {
             break;
           case 'file_transfer_response':
             this.onFileTransferResponse.next(message.payload);
+            break;
+          case 'control_message':
+            this.onControlMessage.next({ fromId: targetId, payload: message.payload });
             break;
           case 'file_info': // Keep for backward compatibility or other uses
             this.fileReceivers.set(
@@ -503,11 +507,13 @@ export class P2PService {
   }
 
   public sendP2PMessage(targetId: string, type: string, payload: any) {
+    console.log(`[P2P] Attempting to send message to ${targetId}:`, { type, payload });
     const dataChannel = this.dataChannels.get(targetId);
     if (dataChannel && dataChannel.readyState === 'open') {
       dataChannel.send(JSON.stringify({ type, payload }));
+      console.log(`[P2P] Message sent to ${targetId}`);
     } else {
-      console.error(`Data channel with ${targetId} is not open. Cannot send message.`);
+      console.error(`[P2P] Data channel with ${targetId} is not open. Cannot send message. State: ${dataChannel?.readyState}`);
     }
   }
 
