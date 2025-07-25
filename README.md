@@ -1,6 +1,9 @@
 # Duang File Web - 局域网文件传输工具前端
 
 ## 概述
+
+后端仓库地址: [duang_file](https://github.com/Waiting-Chai/duang_file)
+
 这是一个React前端应用，使用Vite构建，支持登录、文件传输、客户端列表和广播消息。集成WebSocket与后端通信，实现实时文件传输和群聊。
 
 ## 安装
@@ -37,3 +40,20 @@ src/
 ```
 
 更多细节见代码注释。
+
+## 应用截图
+
+### 主界面
+![主界面](./public/screenshots/screenshot-main.png)
+
+### 文件发送确认
+![文件发送确认](./public/screenshots/screenshot-confirm-transfer.png)
+
+### 文件接收请求
+![文件接收请求](./public/screenshots/screenshot-receive-request.png)
+
+### 广播消息
+![广播消息](./public/screenshots/screenshot-broadcast.png)
+
+### 登录页面
+![登录页面](./public/screenshots/screenshot-login.png)
