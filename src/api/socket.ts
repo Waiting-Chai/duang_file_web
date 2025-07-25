@@ -5,20 +5,21 @@ import { Device } from '../types';
 import { UAParser } from 'ua-parser-js';
 import { config } from '../config';
 import { WebSocketMessage } from '../types/transfer';
-// os模块在浏览器环境中不可用，移除导入
-// import os from 'os';
 
 const clientListSubject = new BehaviorSubject<Device[]>([]);
 const messageSubject = new Subject<WebSocketMessage>();
 
 class SocketService {
   private socket: WebSocket | null = null;
+  public onConnect = new Subject<void>();
+  public onConnectionFailed = new Subject<string>();
   private deviceId: string = '';
   private isManualDisconnect = false;
   private isReload = false;
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 5;
   private reconnectTimeout: NodeJS.Timeout | null = null;
+  public isConnected = new BehaviorSubject<boolean>(false);
 
   constructor() {
     const navigationEntries = performance.getEntriesByType("navigation");
@@ -71,8 +72,10 @@ class SocketService {
     this.socket.onopen = () => {
       console.log('WebSocket connection successful');
       toast.success('Connection successful');
+      this.isConnected.next(true);
       this.isReload = false;
       this.reconnectAttempts = 0; // 重置重连计数
+      this.onConnect.next(); // 触发连接成功事件
       this.sendMessage('get_client_list', {});
     };
 
@@ -148,15 +151,20 @@ class SocketService {
 
     this.socket.onclose = (event) => {
       console.log('WebSocket connection closed:', event.reason);
+      this.isConnected.next(false);
       if (!this.isManualDisconnect && !this.isReload) {
         toast.error('Connection disconnected, trying to reconnect...');
         this.tryReconnect();
+      } else if (!(event as CloseEvent).wasClean) {
+        this.onConnectionFailed.next('WebSocket connection closed unexpectedly');
       }
       clientListSubject.next([]);
     };
 
     this.socket.onerror = (error) => {
       console.error('WebSocket error:', error);
+      this.isConnected.next(false);
+      this.onConnectionFailed.next('WebSocket connection error');
     };
   }
 
@@ -181,11 +189,18 @@ class SocketService {
     }, delay);
   }
 
-  disconnect() {
+  disconnect(isManual = true, isToLoginManual = false) {
     if (this.socket) {
-      this.isManualDisconnect = true;
+      this.isManualDisconnect = isManual;
       this.socket.close();
       this.socket = null;
+      this.isConnected.next(false);
+      if (isManual) {
+        sessionStorage.removeItem('username');
+      }
+      if (isManual && !isToLoginManual) {
+        window.location.href = '/login';
+      }
     }
   }
 
@@ -237,6 +252,28 @@ class SocketService {
       filter(msg => msg.type === type),
       map(msg => msg.payload as T)
     );
+  }
+
+  waitForConnect(timeout: number): Promise<boolean> {
+    return new Promise((resolve) => {
+      if (this.isConnected.getValue()) {
+        resolve(true);
+        return;
+      }
+
+      const subscription = this.isConnected.subscribe(isConnected => {
+        if (isConnected) {
+          clearTimeout(timer);
+          subscription.unsubscribe();
+          resolve(true);
+        }
+      });
+
+      const timer = setTimeout(() => {
+        subscription.unsubscribe();
+        resolve(false);
+      }, timeout);
+    });
   }
 }
 
