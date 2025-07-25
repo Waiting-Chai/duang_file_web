@@ -172,6 +172,7 @@ class SocketService {
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
       console.log(`Maximum reconnection attempts reached (${this.maxReconnectAttempts}), stopping reconnection`);
       toast.error('Unable to connect to the server, please check the network or refresh the page');
+      socketService.disconnect(true);
       return;
     }
 
