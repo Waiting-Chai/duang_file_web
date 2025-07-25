@@ -1,7 +1,7 @@
 import { BehaviorSubject } from 'rxjs';
 import { p2pService, FileReceiver } from './p2p';
 import { socketService } from './socket';
-import { FileTransferRequest, FileTransferResponse, TransferProgress } from '../types/transfer';
+import { FileTransferRequest, FileTransferResponse } from '../types/transfer';
 import { Transfer, TransferStatus } from '../types';
 
 const CHUNK_SIZE = 1024 * 32; // 32KB
@@ -30,7 +30,7 @@ class TransferService {
         const currentTransfers = this.transfers.getValue();
         const transfer = currentTransfers.find(t => t.id === fileId);
         if (transfer && transfer.file) {
-          this.updateTransferState({ fileId, status: 'sending' });
+          this.updateTransferState({ id: fileId, status: 'sending' });
           this.startChunking(transfer.file, fileId, [fromId]);
         }
       } else {
@@ -41,30 +41,25 @@ class TransferService {
   }
 
   // 更新传输进度的便捷方法
-  public updateTransferProgress(fileId: string, progress: number, speed?: string, status?: TransferStatus) {
-    const progressUpdate: TransferProgress = {
-      fileId,
+  public updateTransferProgress(fileId: string, progress: number, rate?: number, status?: TransferStatus) {
+    const progressUpdate: Partial<Transfer> = {
+      id: fileId,
       progress,
-      speed: speed || '0 kb/s',
-      status: status
+      rate,
+      status
     };
-    this.updateTransferState(progressUpdate);
+    this.updateTransferState(progressUpdate as Partial<Transfer> & { id: string | number });
   }
 
-  private updateTransferState(progress: Partial<TransferProgress> & { fileId: string }) {
+  private updateTransferState(update: Partial<Transfer> & { id: string | number }) {
     const currentTransfers = this.transfers.getValue();
-    const existingTransferIndex = currentTransfers.findIndex(t => t.id === progress.fileId);
+    const existingTransferIndex = currentTransfers.findIndex(t => t.id === update.id);
 
     if (existingTransferIndex > -1) {
       const updatedTransfers = [...currentTransfers];
       const existingTransfer = { ...updatedTransfers[existingTransferIndex] };
       
-      if (progress.progress !== undefined) existingTransfer.progress = progress.progress;
-      if (progress.status) existingTransfer.status = progress.status;
-      if (progress.speed) {
-        const speedMatch = progress.speed.match(/(\d+(\.\d+)?)/);
-        if (speedMatch) existingTransfer.rate = parseFloat(speedMatch[1]);
-      }
+      Object.assign(existingTransfer, update);
 
       updatedTransfers[existingTransferIndex] = existingTransfer;
       this.transfers.next(updatedTransfers);
@@ -111,13 +106,15 @@ class TransferService {
           for (const targetId of targetClientIds) {
             p2pService.sendP2PMessage(targetId, 'file_transfer_request', requestPayload);
           }
-          this.updateTransferState({ fileId, status: 'waiting_for_approval' });
+          this.updateTransferState({ id: fileId, status: 'waiting_for_approval' });
         }
       }
     });
   }
 
   private async startChunking(file: File, fileId: string, targetClientIds: string[]) {
+    let lastTimestamp = Date.now();
+    let lastSentBytes = 0;
     const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
     for (let i = 0; i < totalChunks; i++) {
       const start = i * CHUNK_SIZE;
@@ -160,14 +157,25 @@ class TransferService {
           p2pService.sendFileChunk(targetId, combinedChunk.buffer);
         }
 
-        this.updateTransferProgress(fileId, (i + 1) / totalChunks, undefined, 'sending');
+        const now = Date.now();
+        const timeDiff = (now - lastTimestamp) / 1000;
+        const sentBytes = (i + 1) * CHUNK_SIZE;
+        const bytesDiff = sentBytes - lastSentBytes;
+        let rate = 0;
+        if (timeDiff > 0) {
+          rate = bytesDiff / timeDiff / 1024; // KB/s
+        }
+        lastTimestamp = now;
+        lastSentBytes = sentBytes;
+
+        this.updateTransferProgress(fileId, (i + 1) / totalChunks, rate, 'sending');
       } catch (error) {
         console.error('发送文件块失败:', error);
-        this.updateTransferState({ fileId, status: 'failed' });
+        this.updateTransferState({ id: fileId, status: 'failed' });
         break;
       }
     }
-    this.updateTransferState({ fileId, status: 'completed', progress: 1 });
+    this.updateTransferState({ id: fileId, status: 'completed', progress: 1 });
   }
 
   public updateTransferWithDownload(fileId: string, blobUrl: string) {

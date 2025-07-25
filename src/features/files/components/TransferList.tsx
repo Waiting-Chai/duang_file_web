@@ -56,7 +56,7 @@ const getStatusText = (status: TransferStatus, progress?: number): string => {
       return 'Waiting for confirmation';
     case 'sending':
     case 'receiving':
-      return progress !== undefined ? `${Math.round(progress * 100)}%` : 'Processing';
+      return progress !== undefined ? `${Math.min(100, Math.round(progress * 100))}%` : 'Processing';
     case 'paused':
       return 'Paused';
     case 'completed':
@@ -211,7 +211,7 @@ const TransferItem = ({ transfer, onPause, onResume, onCancel }: { transfer: Tra
         <div className="mt-2 h-1.5 w-full bg-gray-600 rounded-full overflow-hidden">
           <div 
             className={`h-full transition-all duration-300 ${getProgressBarColor(transfer.status)}`} 
-            style={{ width: `${Math.round(transfer.progress * 100)}%` }}
+            style={{ width: `${Math.min(100, Math.round(transfer.progress * 100))}%` }}
           ></div>
         </div>
       )}

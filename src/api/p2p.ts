@@ -15,6 +15,8 @@ export class FileReceiver {
   private totalChunks: number;
   private receivedChunks: Map<number, ArrayBuffer>;
   private receivedChunksCount: number = 0;
+  private lastTimestamp: number = 0;
+  private lastReceivedBytes: number = 0;
 
   constructor(fileId: string, fileName: string, totalChunks: number) {
     this.fileId = fileId;
@@ -50,11 +52,27 @@ export class FileReceiver {
         this.receivedChunksCount++;
         console.log(`成功添加文件 ${this.fileName} 的块 ${chunkIndex}，当前进度: ${this.receivedChunksCount}/${this.totalChunks}`);
 
-        // 更新传输进度
-        const progress = Math.floor((this.receivedChunksCount / this.totalChunks) * 100);
+        const now = Date.now();
+        const currentReceivedBytes = this.receivedChunksCount * 32 * 1024; // 假设 CHUNK_SIZE 是 32KB
+
+        let rate = 0;
+        if (this.lastTimestamp > 0) {
+          const timeDiff = (now - this.lastTimestamp) / 1000; // in seconds
+          const bytesDiff = currentReceivedBytes - this.lastReceivedBytes;
+          if (timeDiff > 0) {
+            rate = bytesDiff / timeDiff / 1024; // in KB/s
+          }
+        }
+
+        this.lastTimestamp = now;
+        this.lastReceivedBytes = currentReceivedBytes;
+
+        // 更新传输进度，使用 0-1 的浮点数
+        const progress = this.receivedChunksCount / this.totalChunks;
         // 导入 transferService 可能会导致循环依赖，所以这里使用 window 对象临时存储
         if (window.transferService) {
-          window.transferService.updateTransferProgress(this.fileId, progress, undefined, progress === 100 ? 'completed' : 'receiving');
+          // 'completed' 状态将在文件成功组装后设置
+          window.transferService.updateTransferProgress(this.fileId, progress, rate, 'receiving');
         }
 
         if (this.receivedChunksCount === this.totalChunks) {
@@ -87,7 +105,7 @@ export class FileReceiver {
       
       // 更新传输状态为失败
       if (window.transferService) {
-        window.transferService.updateTransferProgress(this.fileId, this.receivedChunksCount / this.totalChunks * 100, undefined, 'failed');
+        window.transferService.updateTransferProgress(this.fileId, this.receivedChunksCount / this.totalChunks, undefined, 'failed');
       }
       return;
     }
@@ -105,7 +123,7 @@ export class FileReceiver {
           if (chunk.byteLength === 0) {
             console.error(`文件 ${this.fileName} 的块 ${i} 数据为空`);
             if (window.transferService) {
-              window.transferService.updateTransferProgress(this.fileId, 100, undefined, 'failed');
+              window.transferService.updateTransferProgress(this.fileId, 1, undefined, 'failed');
             }
             return;
           }
@@ -116,7 +134,7 @@ export class FileReceiver {
         } else {
           console.error(`文件 ${this.fileName} 缺少块 ${i}`);
           if (window.transferService) {
-            window.transferService.updateTransferProgress(this.fileId, 100, undefined, 'failed');
+            window.transferService.updateTransferProgress(this.fileId, 1, undefined, 'failed');
           }
           return;
         }
@@ -137,7 +155,7 @@ export class FileReceiver {
     } catch (error: unknown) {
       console.error(`组装和下载文件 ${this.fileName} 时出错:`, error);
       if (window.transferService) {
-        window.transferService.updateTransferProgress(this.fileId, 100, undefined, 'failed');
+        window.transferService.updateTransferProgress(this.fileId, 1, undefined, 'failed');
       }
     }
   }
