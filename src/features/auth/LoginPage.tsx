@@ -9,6 +9,7 @@ export default function LoginPage() {
   const [showDuang, setShowDuang] = useState(false);
 
   useEffect(() => {
+    console.log('登录页面加载， 登录页面进行断联');
     //   只要加载到这个页面， 直接把所有的 websocket断联
     socketService.disconnect(true, true);
   }, []);

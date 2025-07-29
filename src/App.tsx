@@ -50,7 +50,9 @@ const Logout = () => {
 function App() {
   useEffect(() => {
     const username = sessionStorage.getItem('username');
+    console.log('App组件加载, username:', username);
     if (username && !socketService.isConnected.getValue()) {
+      console.log("App组件调用effect进行重连")
       socketService.connect();
     }
 

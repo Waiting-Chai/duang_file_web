@@ -20,9 +20,23 @@ export default function FileTransferPage() {
 
   useEffect(() => {
     const subscription = transferService.onFileTransferRequest$.subscribe(request => {
+      console.log('[FileTransferPage] 接收到文件传输请求:', request);
+      console.log('[FileTransferPage] 文件大小:', request.fileSize, '字节');
+      console.log('[FileTransferPage] 总块数:', request.totalChunks);
+      console.log('[FileTransferPage] 块大小:', request.chunkSize, '字节');
+      
+      // 确保弹窗显示，特别是对于小文件
       setIncomingRequest(request);
+      
+      // 添加额外的日志确认状态更新
+      setTimeout(() => {
+        console.log('[FileTransferPage] 弹窗状态检查 - incomingRequest:', !!request);
+      }, 100);
     });
-    return () => subscription.unsubscribe();
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const handleFilesSelected = (acceptedFiles: File[]) => {
@@ -66,10 +80,17 @@ export default function FileTransferPage() {
     setFilesToConfirm([]);
   };
 
-  const handleAcceptReceive = () => {
+  const handleAcceptReceive = async () => {
     if (incomingRequest) {
-      transferService.acceptTransfer(incomingRequest);
-      setIncomingRequest(null);
+      console.log('[FileTransferPage] 用户接受文件传输:', incomingRequest);
+      try {
+        await transferService.acceptTransfer(incomingRequest);
+        setIncomingRequest(null);
+        console.log('[FileTransferPage] 文件传输已接受');
+      } catch (error) {
+        console.error('接受文件传输失败:', error);
+        setIncomingRequest(null);
+      }
     }
   };
 

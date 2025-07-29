@@ -198,6 +198,7 @@ class SocketService {
       this.isConnected.next(false);
       if (isManual) {
         sessionStorage.removeItem('username');
+        console.log('手动断开连接');
       }
       if (isManual && !isToLoginManual) {
         window.location.href = '/login';
